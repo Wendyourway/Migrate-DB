@@ -58,5 +58,8 @@ if __name__ == '__main__':
     source_db = connect_database()
     databases = get_databases(source_db)
     for database in databases:
-        export_database(database)
-        import_database(database)
+        try:
+            export_database(database)
+            import_database(database)
+        except:
+            print("An exception occurred")
