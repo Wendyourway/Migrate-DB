@@ -4,10 +4,6 @@ import mysql.connector
 from dotenv import load_dotenv
 from mysql.connector import connect, Error
 
-DB2_host = os.getenv('DB2_HOST')
-DB2_user = os.getenv('DB2_USER')
-DB2_password = os.getenv('DB2_PASSWORD')
-
 database_exception = [
     "information_schema",
     "performance_schema",
@@ -49,7 +45,13 @@ def export_database(database):
     password = os.getenv('DB1_PASSWORD')
     command = "mysqldump -h " + host + " -u " + user + " -p" + password + " --databases " + database + " > exports/" + database + ".sql"
     subprocess.run(command, shell=True, check=True, text=True)
-    
+
+def import_database(database):
+    host = os.getenv('DB2_HOST')
+    user = os.getenv('DB2_USER')
+    password = os.getenv('DB2_PASSWORD')
+    command = "mysql -h " + host + " -u " + user + " -p" + password + " " + database + " < exports/" + database + ".sql"
+    subprocess.run(command, shell=True, check=True, text=True)
     
 if __name__ == '__main__':
     load_dotenv()
@@ -57,4 +59,4 @@ if __name__ == '__main__':
     databases = get_databases(source_db)
     for database in databases:
         export_database(database)
-    
+        import_database(database)
