@@ -8,7 +8,8 @@ database_exception = [
     "information_schema",
     "performance_schema",
     "phpmyadmin",
-    "mysql"
+    "mysql",
+    "sys"
 ]
 
 def connect(host, username, password):
