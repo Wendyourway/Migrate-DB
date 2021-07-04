@@ -1,7 +1,10 @@
 import os
+import time
 import subprocess
+import getpass
+import calendar
 import mysql.connector
-from dotenv import load_dotenv
+import pyfiglet
 from mysql.connector import connect, Error
 
 database_exception = [
@@ -12,6 +15,11 @@ database_exception = [
     "sys"
 ]
 
+timestamp = calendar.timegm(time.gmtime())
+
+source_connection = None
+destination_connection = None
+
 def connect(host, username, password):
     """ Connect to MySQL database """
     conn = None
@@ -21,15 +29,8 @@ def connect(host, username, password):
             print('Connected to MySQL database')
             return conn
     except Error as e:
-        print(e)
-
-def connect_database():
-    host = os.getenv('DB1_HOST')
-    user = os.getenv('DB1_USER')
-    password = os.getenv('DB1_PASSWORD')
-    connection = connect(host,user, password)
-    return connection
-
+        return False
+        
 def get_databases(connection):
     databases = []
     source_cursor = connection.cursor()
@@ -40,27 +41,73 @@ def get_databases(connection):
             databases.append(x[0])
     return databases
 
-def export_database(database):
-    host = os.getenv('DB1_HOST')
-    user = os.getenv('DB1_USER')
-    password = os.getenv('DB1_PASSWORD')
-    command = "mysqldump -h " + host + " -u " + user + " -p" + password + " --databases " + database + " > exports/" + database + ".sql"
+"""Exports the database
+
+
+:param hostname: the hostname to export from
+:type hostname: str
+:param username: the username to use
+:type username: str
+:param password: the password to use
+:type password: str
+:param database: the database to export
+:type database: str
+:returns: Nothing
+"""
+def export(hostname, username, password, database) :
+    command = "mysqldump -h " + hostname + " -u " + username + " -p" + password + " --database " + database + " > exports/" + timestamp + "/" + database + ".sql"
     subprocess.run(command, shell=True, check=True, text=True)
 
-def import_database(database):
-    host = os.getenv('DB2_HOST')
-    user = os.getenv('DB2_USER')
-    password = os.getenv('DB2_PASSWORD')
-    command = "mysql -h " + host + " -u " + user + " -p" + password + " " + database + " < exports/" + database + ".sql"
+"""Imports the database
+
+:param hostname: the hostname to export from
+:type hostname: str
+:param username: the username to use
+:type username: str
+:param password: the password to use
+:type password: str
+:param database: the database to export
+:type database: str
+:returns: Nothing
+"""
+def import(hostname, username, password, database) :
+    command = "mysql -h " + hostname + " -u " + username + "-p" + password + " " + database + " < exports/" + timestamp + "/" + database + ".sql"
     subprocess.run(command, shell=True, check=True, text=True)
-    
+
 if __name__ == '__main__':
-    load_dotenv()
-    source_db = connect_database()
-    databases = get_databases(source_db)
-    for database in databases:
-        try:
-            export_database(database)
-            import_database(database)
-        except:
-            print("An exception occurred")
+    ascii_banner = pyfiglet.figlet_format("DATABASE MIGRATION")
+    print(ascii_banner)
+    operation_loop = True
+    while operation_loop:
+        sourceHost = input("Enter Source Hostname: ")
+        if sourceHost == "0" or not sourceHost:
+            operation_loop = False
+        else:
+            sourceUser = input("Enter Source Username: ")
+            sourcePass =  getpass.getpass(prompt='Enter Source Password: ')
+            databases = input("Enter databases to export (separated by comma) or leave blank for all: ")
+            # remove white spaces
+            databases.replace(" ", "")
+            source_connection = connect(sourceHost, sourceUser, sourcePass)
+            if(source_connection):
+                if(not databases):
+                    # No detabase specified, so we get all of them.
+                    databases = get_databases(source_connection)
+                else:
+                    databases = databases.split(",")
+            is_migrating = input("Do you wish to migrate the database to another database server too? y / n")
+            if is_migrating == "y":
+                destinationHost = input("Enter Destination Host: ")
+                destinationUser = input("Enter Destination Username: ")
+                destinationPass = getpass.getpass(prompt='Enter Destination Password: ')
+                destination_connection = connect(destinationHost, destinationUser, destinationPass)
+            if(destination_connection):
+                for database in databases:
+                    try:
+                        export(sourceHost, sourceUser, sourcePass, database)
+                        print(database + ": export successful")
+                        if is_migrating == "y" and destination_connection is not False:
+                            import(destinationHost, destinationUser, destinationPass, database)
+                            print(database + ": import successful")
+                    except:
+                        print("An exception occured")
