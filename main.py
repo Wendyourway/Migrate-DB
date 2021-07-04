@@ -30,7 +30,7 @@ def connect(host, username, password):
             return conn
     except Error as e:
         return False
-        
+
 def get_databases(connection):
     databases = []
     source_cursor = connection.cursor()
@@ -54,7 +54,7 @@ def get_databases(connection):
 :type database: str
 :returns: Nothing
 """
-def export(hostname, username, password, database) :
+def export_db(hostname, username, password, database) :
     command = "mysqldump -h " + hostname + " -u " + username + " -p" + password + " --database " + database + " > exports/" + timestamp + "/" + database + ".sql"
     subprocess.run(command, shell=True, check=True, text=True)
 
@@ -70,7 +70,7 @@ def export(hostname, username, password, database) :
 :type database: str
 :returns: Nothing
 """
-def import(hostname, username, password, database) :
+def import_db(hostname, username, password, database) :
     command = "mysql -h " + hostname + " -u " + username + "-p" + password + " " + database + " < exports/" + timestamp + "/" + database + ".sql"
     subprocess.run(command, shell=True, check=True, text=True)
 
@@ -90,24 +90,27 @@ if __name__ == '__main__':
             databases.replace(" ", "")
             source_connection = connect(sourceHost, sourceUser, sourcePass)
             if(source_connection):
+                print("Source connected...")
                 if(not databases):
                     # No detabase specified, so we get all of them.
                     databases = get_databases(source_connection)
                 else:
                     databases = databases.split(",")
-            is_migrating = input("Do you wish to migrate the database to another database server too? y / n")
-            if is_migrating == "y":
-                destinationHost = input("Enter Destination Host: ")
-                destinationUser = input("Enter Destination Username: ")
-                destinationPass = getpass.getpass(prompt='Enter Destination Password: ')
-                destination_connection = connect(destinationHost, destinationUser, destinationPass)
-            if(destination_connection):
+                is_migrating = input("Do you wish to migrate the database to another database server too? y / n:")
+                if is_migrating == "y":
+                    destinationHost = input("Enter Destination Host: ")
+                    destinationUser = input("Enter Destination Username: ")
+                    destinationPass = getpass.getpass(prompt='Enter Destination Password: ')
+                    destination_connection = connect(destinationHost, destinationUser, destinationPass)
                 for database in databases:
+                    print("Processing " + database + "...")
                     try:
-                        export(sourceHost, sourceUser, sourcePass, database)
+                        export_db(sourceHost, sourceUser, sourcePass, database)
                         print(database + ": export successful")
                         if is_migrating == "y" and destination_connection is not False:
-                            import(destinationHost, destinationUser, destinationPass, database)
+                            import_db(destinationHost, destinationUser, destinationPass, database)
                             print(database + ": import successful")
                     except:
                         print("An exception occured")
+            else:
+                print("Failed to connect to source host")
