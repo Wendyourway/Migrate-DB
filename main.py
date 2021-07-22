@@ -7,6 +7,7 @@ import mysql.connector
 import pyfiglet
 from mysql.connector import connect, Error
 from decouple import config
+import base64
 
 
 database_exception = [
@@ -30,6 +31,7 @@ drop_database = config("drop_database")
 destinationHost = config("destination_host")
 destinationUser = config("destination_user")
 destinationPass = config("destination_pass")
+
 
 """Connect
 : param host: the hostname to export from
@@ -80,9 +82,9 @@ def get_databases(connection):
 
 def export_db(hostname, username, password, database):
 
-    command = "mysqldump -h " + hostname + " -u " + username + " -p" + password + \
-        " --databases " + database + " --no-create-db > exports/" + \
-        str(timestamp) + "-" + database + ".sql"
+    command = "mysqldump -h " + str(hostname) + " -u " + str(username) + " -p" + str(password) + \
+        " --databases " + str(database) + " --no-create-db > exports/" + \
+        str(timestamp) + "-" + str(database) + ".sql"
     subprocess.run(command, shell=True, check=True, text=True)
 
 
@@ -124,11 +126,11 @@ if __name__ == '__main__':
 
     if(not sourceUser):
         sourceUser = input("Enter Source Username: ")
-    if (not sourcePass):
+    if (not sourcePass): # maybe best spot
         sourcePass = getpass.getpass(prompt='Enter Source Password: ')
+    sourcePass = base64.b64decode(sourcePass).decode("ascii")
     # remove white spaces
     databases.replace(" ", "")
-
     source_connection = connect(sourceHost, sourceUser, sourcePass)
     if(source_connection):
         print("Source connected...")
@@ -144,6 +146,7 @@ if __name__ == '__main__':
         if (not destinationPass):
             destinationPass = getpass.getpass(
                 prompt='Enter Destination Password: ')
+        destinationPass = base64.b64decode(destinationPass).decode("ascii")
         destination_connection = connect(
             destinationHost, destinationUser, destinationPass)
         for database in databases:
