@@ -18,15 +18,33 @@ database_exception = [
     "sys"
 ]
 
+sources = [
+    {
+        "sourceHost": null,
+        "sourceUser": null,
+        "sourcePass": null,
+        "databases": []
+    },
+    {
+        "sourceHost": null,
+        "sourceUser": null,
+        "sourcePass": null,
+        "databases": []   
+    },
+    {
+        "sourceHost": null,
+        "sourceUser": null,
+        "sourcePass": null,
+        "databases": []
+    }
+]
+
 timestamp = calendar.timegm(time.gmtime())
 
 source_connection = None
 destination_connection = None
 
-sourceHost = config("source_host")
-sourceUser = config("source_user")
-sourcePass = config("source_pass")
-databases = config("databases")
+
 drop_database = config("drop_database")
 destinationHost = config("destination_host")
 destinationUser = config("destination_user")
@@ -120,42 +138,46 @@ def import_db(hostname, username, password, database):
 if __name__ == '__main__':
     ascii_banner = pyfiglet.figlet_format("DATABASE MIGRATION")
     print(ascii_banner)
-    if (not sourceHost):  # is source empty?
-        # get source host from input
-        sourceHost = input("Enter Source Host: ")
-
-    if(not sourceUser):
-        sourceUser = input("Enter Source Username: ")
-    if (not sourcePass): # maybe best spot
-        sourcePass = getpass.getpass(prompt='Enter Source Password: ')
-    sourcePass = base64.b64decode(sourcePass).decode("ascii")
-    # remove white spaces
-    databases.replace(" ", "")
-    source_connection = connect(sourceHost, sourceUser, sourcePass)
-    if(source_connection):
-        print("Source connected...")
-        if(not databases):
-            # No detabase specified, so we get all of them.
-            databases = get_databases(source_connection)
-        else:
-            databases = databases.split(",")
-        if (not destinationHost):
-            destinationHost = input("Enter Destination Host: ")
-        if (not destinationUser):
-            destinationUser = input("Enter Destination Username: ")
-        if (not destinationPass):
-            destinationPass = getpass.getpass(
-                prompt='Enter Destination Password: ')
-        destinationPass = base64.b64decode(destinationPass).decode("ascii")
-        destination_connection = connect(
-            destinationHost, destinationUser, destinationPass)
-        for database in databases:
-            export_db(sourceHost, sourceUser, sourcePass, database)
-            if destination_connection is not False:
-                import_db(destinationHost, destinationUser,
-                          destinationPass, database)
-                print(database + ": import successful")
+    for source in sources:
+        sourceHost = source["sourceHost"]
+        sourceUser = source["sourceUser"]
+        sourcePass = source["sourcePass"]
+        databases =  source["databases"]
+        if (not sourceHost):  # is source empty?
+            # get source host from input
+            sourceHost = input("Enter Source Host: ")
+        if(not sourceUser):
+            sourceUser = input("Enter Source Username: ")
+        if (not sourcePass): # maybe best spot
+            sourcePass = getpass.getpass(prompt='Entesr Source Password: ')
+        sourcePass = base64.b64decode(sourcePass).decode("ascii")
+        # remove white spaces
+        databases.replace(" ", "")
+        source_connection = connect(sourceHost, sourceUser, sourcePass)
+        if(source_connection):
+            print("Source connected...")
+            if(not databases):
+                # No detabase specified, so we get all of them.
+                databases = get_databases(source_connection)
             else:
-                print("not importing")
-    else:
-        print("Failed to connect to source host")
+                databases = databases.split(",")
+            if (not destinationHost):
+                destinationHost = input("Enter Destination Host: ")
+            if (not destinationUser):
+                destinationUser = input("Enter Destination Username: ")
+            if (not destinationPass):
+                destinationPass = getpass.getpass(
+                    prompt='Enter Destination Password: ')
+            destinationPass = base64.b64decode(destinationPass).decode("ascii")
+            destination_connection = connect(
+                destinationHost, destinationUser, destinationPass)
+            for database in databases:
+                export_db(sourceHost, sourceUser, sourcePass, database)
+                if destination_connection is not False:
+                    import_db(destinationHost, destinationUser,
+                            destinationPass, database)
+                    print(database + ": import successful")
+                else:
+                    print("not importing")
+        else:
+            print("Failed to connect to source host")
