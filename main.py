@@ -8,6 +8,7 @@ import pyfiglet
 from mysql.connector import connect, Error
 from decouple import config
 import base64
+import json
 
 
 database_exception = [
@@ -18,26 +19,6 @@ database_exception = [
     "sys"
 ]
 
-sources = [
-    {
-        "sourceHost": null,
-        "sourceUser": null,
-        "sourcePass": null,
-        "databases": []
-    },
-    {
-        "sourceHost": null,
-        "sourceUser": null,
-        "sourcePass": null,
-        "databases": []   
-    },
-    {
-        "sourceHost": null,
-        "sourceUser": null,
-        "sourcePass": null,
-        "databases": []
-    }
-]
 
 timestamp = calendar.timegm(time.gmtime())
 
@@ -138,6 +119,11 @@ def import_db(hostname, username, password, database):
 if __name__ == '__main__':
     ascii_banner = pyfiglet.figlet_format("DATABASE MIGRATION")
     print(ascii_banner)
+    # Open and read 'sources.json file'
+    file = open('sources.json')
+    # return file object output as dictionary 
+    sources = json.load(file)
+    # Loop each dictionary element
     for source in sources:
         sourceHost = source["sourceHost"]
         sourceUser = source["sourceUser"]
@@ -181,3 +167,5 @@ if __name__ == '__main__':
                     print("not importing")
         else:
             print("Failed to connect to source host")
+    # Close file to end the process 
+    file.close()
