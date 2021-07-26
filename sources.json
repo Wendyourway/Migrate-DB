@@ -1,0 +1,20 @@
+[
+    {
+        "sourceHost": "192.168.1.200",
+        "sourceUser": "mark",
+        "sourcePass": "password",
+        "databases": []
+    },
+    {
+        "sourceHost": "192.168.1.105",
+        "sourceUser": "gerald",
+        "sourcePass": "lolahubag",
+        "databases": []
+    },
+    {
+        "sourceHost": "192.168.1.99",
+        "sourceUser": "jelden",
+        "sourcePass": "btsbayot",
+        "databases": []
+    }
+]
